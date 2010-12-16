@@ -25,14 +25,10 @@ This is the public module for the type checking functionality.
 > -}
 > module Database.HsSqlPpp.TypeChecker
 >     (
->      -- * typechecking/ annotation functions
->      typeCheck
->     ,typeCheckPS
->     ,typeCheckExpression
->      -- * Annotated tree utils
->     ,getStatementAnnotations
+>      typeCheckScalarExpr
+>     ,typeCheckQueryExpr
+>     ,typeCheckQueryExprs
 >     ) where
 >
 > import Database.HsSqlPpp.AstInternals.AstInternal
-> --import Database.HsSqlPpp.AstInternals.AstAnnotation
-> import Database.HsSqlPpp.AstInternals.AnnotationUtils
+

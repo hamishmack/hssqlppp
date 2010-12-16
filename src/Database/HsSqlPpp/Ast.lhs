@@ -10,85 +10,40 @@
 >      -}
 >
 > module Database.HsSqlPpp.Ast
->     (
->      -- * Main nodes
->      StatementList
->     ,Statement (..)
->     ,Expression (..)
->     ,SelectExpression (..)
->      -- * Components
->      -- ** Selects
->     ,SelectList (..)
->     ,SelectItem (..)
->     ,TableRef (..)
->     ,TableAlias(..)
->     ,JoinExpression (..)
->     ,JoinType (..)
->     ,Natural (..)
->     ,CombineType (..)
->     ,Direction (..)
->     ,Distinct (..)
->     ,InList (..)
->     ,LiftFlavour (..)
->     ,FrameClause(..)
+>     (-- * Query Expressions
+>      QueryExpression(..)
 >     ,WithQueryList
 >     ,WithQuery(..)
->      -- ** dml
->     ,CopySource (..)
->     ,RestartIdentity (..)
->      -- ** ddl
->     ,AttributeDef (..)
->     ,RowConstraint (..)
->     ,Constraint (..)
->     ,AlterTableAction(..)
->     ,TypeAttributeDef (..)
->     ,TypeName (..)
->     ,DropType (..)
->     ,IfExists (..)
->     ,Replace(..)
->     ,Cascade (..)
->     ,TriggerWhen(..)
->     ,TriggerEvent(..)
->     ,TriggerFire(..)
->      -- ** functions
->     ,FnBody (..)
->     ,ParamDef (..)
->     ,VarDef (..)
->     ,RaiseType (..)
->     ,Volatility (..)
->     ,Language (..)
->      -- ** misc
->     ,SetValue(..)
->     -- ,Name(..)
->      -- ** typedefs
->     ,ExpressionListStatementListPairList
->     ,ExpressionListStatementListPair
->     ,ExpressionList
->     ,MaybeSelectList
->     --,StringList
->     ,ParamDefList
->     ,AttributeDefList
->     ,ConstraintList
->     ,TypeAttributeDefList
->     ,TypeNameList
->     ,StringTypeNameListPair
->     ,StringTypeNameListPairList
->     ,ExpressionStatementListPairList
->     ,CaseExpressionListExpressionPairList
+>     ,CombineType(..)
+>     ,Direction(..)
+>     ,Distinct(..)
+>     -- * Select Lists
+>     ,SelectList(..)
+>     ,SelectItem(..)
+>     -- * Table Refs
+>     ,TableRef(..)
+>     ,TableAlias(..)
+>     ,JoinExpression(..)
+>     ,JoinType(..)
+>     ,Natural(..)
+>     -- * Scalar Expressions
+>     ,ScalarExpression(..)
+>     ,LiftFlavour(..)
+>     ,InList(..)
+>     ,FrameClause(..)
+>     ,TypeName(..)
+>     -- * Boilerplate Typedefs
+>     ,SelectItemList
+>     ,TableRefList
 >     ,MaybeExpression
 >     ,MaybeBoolExpression
->     ,TableRefList
->     ,ExpressionListList
->     ,SelectItemList
 >     ,OnExpr
->     ,RowConstraintList
->     ,VarDefList
->     ,ExpressionStatementListPair
->     ,CaseExpressionListExpressionPair
+>     ,ExpressionList
+>     ,ExpressionListList
 >     ,ExpressionDirectionPair
 >     ,ExpressionDirectionPairList
->     ,AlterTableActionList
+>     ,CaseExpressionListExpressionPair
+>     ,CaseExpressionListExpressionPairList
 >     ) where
 >
 > import Database.HsSqlPpp.AstInternals.AstInternal
-> --import Database.HsSqlPpp.AstInternals.Name

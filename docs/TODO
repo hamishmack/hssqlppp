@@ -1,3 +1,45 @@
+immediate goal/todos:
+
+want really good typechecking/error reporting for sql analytic
+   queries.
+so: strip out all non query asts, qq, parameterised statement
+   support. Start the type checking again cos it's a mess
+1) new ast roots: [QueryExpression] (was selectexpresson)
+                  QueryExpression
+                  ScalarExpression
+parser: parse each of these from text and from file
+pp + with annot print, type check for each of these
+still need sql types, but overhaul
+still need catalog, may be able to simplify slightly. Keep util to
+   read catalog value from database and save in file or use
+parameterize ast on annotation type
+  parser: position
+  basic typechecker: add maybe type, [type error], maybe function
+   prototype
+canonicalisation pass: add range qualifiers to all column references
+New tests: split into multiple files. Have parsing tests, plus
+   typechecking tests
+
+plan:
+add stubs for new parse, pp, typecheck, annot
+fix ast - mainly add parameterised ast
+hook up some basic tests
+get parsing hooked up and tests working
+do some work on type checking
+do some of the canonicalisation which will help: mainly add qualifiers
+   (possibly the rename stuff also if helps)
+
+do tpc-h queries
+add tests for other canonicalisation & write
+
+locate and fix crufty code: maybe just the implicit type cast
+   resolution stuff?
+
+tidy up documentation, produce new website (simplified)
+
+new release on hackage
+
+
 new medium term goal
 packages:
 sqlppp: sql ast + parsetree?, parser, pretty printer, quasi quotes, syntax

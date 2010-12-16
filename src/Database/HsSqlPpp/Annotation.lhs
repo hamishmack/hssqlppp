@@ -16,7 +16,7 @@ functions (not including those that depend on the ast data types).
 >     ,updateAnnotation
 >     ,getAnnotations
 >     ,emptyAnnotation
->     ,resetAnnotations
+>     ,resetSourcePositions
 >     ) where
 >
 > import Database.HsSqlPpp.AstInternals.AstAnnotation
