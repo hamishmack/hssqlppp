@@ -23,7 +23,7 @@ grammar code and aren't exposed.
 >     ,updateAnnotation
 >     ) where
 >
-> import Data.Generics
+> import Data.Data
 > ---import Control.Arrow
 > import Data.Generics.Uniplate.Data
 > --import Debug.Trace
@@ -140,7 +140,7 @@ without having to get the positions correct.
 >
 > -- | Update all the annotations in a tree using the function supplied
 > updateAnnotation :: Data a => (Annotation -> Annotation) -> a -> a
-> updateAnnotation f = gmapT (mkT f)
+> updateAnnotation f = transformBi f --gmapT (mkT f)
 >
 
 

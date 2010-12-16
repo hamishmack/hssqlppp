@@ -47,7 +47,7 @@ module Database.HsSqlPpp.AstInternals.AstInternal(
 import Data.Maybe
 import Data.List
 import Control.Applicative
-import Data.Generics
+import Data.Data
 import Data.Char
 import Control.Monad.State
 

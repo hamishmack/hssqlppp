@@ -30,7 +30,7 @@ right choice, but it seems to do the job pretty well at the moment.
 > import Data.Char
 >
 > import Data.Generics.PlateData
-> import Data.Generics hiding (Prefix,Infix)
+> import Data.Data hiding (Prefix,Infix)
 >
 > import Database.HsSqlPpp.Parsing.Lexer
 > import Database.HsSqlPpp.Parsing.ParseErrors
