@@ -76,86 +76,6 @@ Top level parsing functions
 >   parseIt l (expr <* eof) f Nothing s startState
 >   where l = lexSqlText f s
 
-
-
-> {-parseSql :: String -- ^ filename to use in errors
->          -> String -- ^ a string containing the sql to parse
->          -> Either ParseErrorExtra A.StatementList
-> parseSql f s =
->   deAS $ parseIt l sqlStatements f Nothing s startState
->   where l = lexSqlText f s
->
-> parseSqlWithPosition :: FilePath -- ^ filename to use in errors
->                      -> Int -- ^ adjust line number in errors by adding this
->                      -> Int -- ^ adjust column in errors by adding this
->                      -> String -- ^ a string containing the sql to parse
->                      -> Either ParseErrorExtra A.StatementList
-> parseSqlWithPosition f l c s = deAS $ parseAntiSql f l c s
->
-> parseSqlFile :: FilePath -- ^ file name of file containing sql
->              -> IO (Either ParseErrorExtra A.StatementList)
-> parseSqlFile fn = do
->   sc <- readFile fn
->   x <- lexSqlFile fn
->   return $ deAS $ parseIt x sqlStatements fn Nothing sc startState
->
-> -- | Parse expression fragment, used for testing purposes
-> parseExpression :: String -- ^ filename for error messages
->                 -> String -- ^ sql string containing a single expression,
->                           -- with no trailing ';'
->                 -> Either ParseErrorExtra A.Expression
-> parseExpression f s =
->   deAE $ parseIt l (expr <* eof) f Nothing s startState
->   where l = lexSqlText f s
->
-> -- | Parse plpgsql statements, used for testing purposes -
-> -- this can be used to parse a list of plpgsql statements which
-> -- aren't contained in a create function.
-> -- (The produced ast won't pass a type check.)
-> parsePlpgsql :: String
->              -> String
->              -> Either ParseErrorExtra A.StatementList
-> parsePlpgsql f s =
->   deAS $ parseIt l p f Nothing s startState
->   where
->     l = lexSqlText f s
->     p = many plPgsqlStatement <* eof
->
-> parseAntiSql :: FilePath
->              -> Int
->              -> Int
->              -> String
->              -> Either ParseErrorExtra StatementList
-> parseAntiSql f l c s =
->   parseIt lx sqlStatements f ps s startState
->   where
->     lx = lexSqlTextWithPosition f l c s
->     ps = Just (l,c)
->
-> parseAntiPlpgsql :: String
->                  -> Int
->                  -> Int
->                  -> String
->                  -> Either ParseErrorExtra [Statement]
-> parseAntiPlpgsql f l c s =
->   parseIt lx p f ps s startState
->   where
->     lx = lexSqlText f s
->     p = many plPgsqlStatement <* eof
->     ps = Just (l,c)
->
-> parseAntiExpression :: String
->                     -> Int
->                     -> Int
->                     -> String
->                     -> Either ParseErrorExtra Expression
-> parseAntiExpression f l c s =
->   parseIt lx p f ps s startState
->   where
->     lx = lexSqlText f s
->     p = expr <* eof
->     ps = Just (l,c) -}
->
 > --utility function to do error handling in one place
 > parseIt :: forall t s u b.(Stream s Identity t, Data b) =>
 >            Either ParseErrorExtra s
@@ -172,17 +92,6 @@ Top level parsing functions
 >                              in case toParseErrorExtra r1 sp src of
 >                                   Left er -> Left er
 >                                   Right t -> Right $ fixupTree t
->
-> {-deAE :: Either ParseErrorExtra Expression
->      -> Either ParseErrorExtra A.Expression
-> deAE x = case x of
->                 Left e -> Left e
->                 Right ex -> Right $ convertExpression ex
-> deAS :: Either ParseErrorExtra [Statement]
->      -> Either ParseErrorExtra [A.Statement]
-> deAS x = case x of
->                 Left e -> Left e
->                 Right ex -> Right $ convertStatements ex -}
 
 --------------------------------------------------------------------------------
 
@@ -669,8 +578,8 @@ row ctor: one of
 >
 > arraySubSuffix :: (ScalarExpression SourcePosition) -> SParser (ScalarExpression SourcePosition)
 > arraySubSuffix e = case e of
->                      Identifier _ "array" -> fail "can't use array as \
->                                                   \identifier name"
+>                      Identifier _ "array" ->
+>                        fail "can't use array as identifier name"
 >                      _ -> FunCall <$> pos
 >                                   <*> return "!arraysub"
 >                                   <*> ((e:) <$> squares (commaSep1 expr))
@@ -1056,8 +965,7 @@ be an array or subselect, etc)
 >                                  "any" -> LiftAny
 >                                  "some" -> LiftAny
 >                                  "all" -> LiftAll
->                                  z -> error $ "internal error in parsing \
->                                               \lift transform: " ++ z
+>                                  z -> error $ "internal error in parsing lift transform: " ++ z
 >              x1 -> x1
 
 --------------------------------------------------------------------------------
