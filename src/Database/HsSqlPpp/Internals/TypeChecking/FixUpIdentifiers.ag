@@ -200,6 +200,7 @@ SEM QueryExpr
                  @selGroupBy.fixedUpIdentifiersTree
                  @selHaving.fixedUpIdentifiersTree
                  @selOrderBy.fixedUpIdentifiersTree
+                 @selFor
                  @selLimit.fixedUpIdentifiersTree
                  @selOffset.fixedUpIdentifiersTree
 
@@ -399,7 +400,7 @@ SEM TableRef
     | Tref (lhs.trefIDs,lhs.fixedUpIdentifiersTree) =
         let iea = aliasEnv @alias.originalTree $ getTableTrefEnv @lhs.cat @tbl.originalTree
             al = getEnvAlias iea
-        in (iea,Tref @ann @tbl.fixedUpIdentifiersTree al)
+        in (iea,Tref @ann @tbl.fixedUpIdentifiersTree al @hints)
         {-let (ie,newAlias) = applyAlias @alias.originalTree
                                        $ getTableTrefEnv @lhs.cat @tbl.originalTree
         in (ie,Tref @ann @tbl.fixedUpIdentifiersTree newAlias)-}
@@ -470,7 +471,7 @@ then the non join keys from the second table
               al = getEnvAlias iea
           in (iea, JoinTref @ann @tbl.fixedUpIdentifiersTree
                             @nat @joinType @tbl1.fixedUpIdentifiersTree
-                            @onExpr.fixedUpIdentifiersTree al)
+                            @onExpr.fixedUpIdentifiersTree al @hints)
            {-let t0env = @tbl.trefIDs
                t1env = @tbl1.trefIDs
                (ie,al) = applyAlias @alias.originalTree $ JoinTrefEnv Nothing t0env t1env

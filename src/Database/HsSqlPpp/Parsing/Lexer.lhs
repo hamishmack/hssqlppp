@@ -48,6 +48,7 @@ copy payload (used to lex copy from stdin data)
 
 >          | IdStringTok String -- either a identifier component (without .) or a *
 >          | QIdStringTok String -- same as IdStringTok with quotes
+>          | BIdStringTok String -- same as IdStringTok with brackets
 
 >          | SymbolTok String -- operators, and ()[],;: and also .
 >                             -- '*' is currently always lexed as an id
@@ -117,6 +118,7 @@ we read a normal token.
 >                  <|> try sqlString
 >                  <|> try idString
 >                  <|> try qidString
+>                  <|> try bidString
 >                  <|> try positionalArg
 >                  <|> try sqlSymbol
 >            updateState $ \stt ->
@@ -170,6 +172,9 @@ parse a dollar quoted string
 
 > qidString :: Parser Tok
 > qidString = QIdStringTok <$> qidentifierString
+
+> bidString :: Parser Tok
+> bidString = BIdStringTok <$> bidentifierString
 
 
 >
@@ -308,6 +313,8 @@ creates a column named: 'a"a' with a double quote in it
 > qidentifierString :: Parser String
 > qidentifierString = lexeme $ char '"' *> many (noneOf "\"") <* char '"'
 
+> bidentifierString :: Parser String
+> bidentifierString = lexeme $ char '[' *> many (noneOf "]") <* char ']'
 
 parse the block of inline data for a copy from stdin, ends with \. on
 its own on a line

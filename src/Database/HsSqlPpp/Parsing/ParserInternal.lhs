@@ -293,6 +293,7 @@ bit convoluted to parse the into part
 >                    <*> option [] groupBy
 >                    <*> optionMaybe having
 >                    <*> orderBy
+>                    <*> optionMaybe forClause
 >                    <*> option tp (Just <$> limit)
 >                    <*> optionMaybe offset
 >           return (case intoBit of
@@ -318,6 +319,28 @@ bit convoluted to parse the into part
 >                                         Asc <$ keyword "asc"
 >                                        ,Desc <$ keyword "desc"])
 
+> forClause :: SParser ForClause
+> forClause = keyword "for" *> choice [
+>                                   ForBrowse <$ keyword "browse"
+>                                  ,ForXml <$> (keyword "xml" *> forXmlType)
+>                                          <*> forXmlDirectives]
+>           where
+>             forXmlType = choice [
+>                               XmlRaw <$> (keyword "raw" *> brackedString)
+>                              ,XmlAuto <$ keyword "auto"
+>                              ,XmlExplicit <$ keyword "explicit"
+>                              ,XmlPath <$> (keyword "path" *> brackedString)]
+>             forXmlDirectives = option [] (symbol "," *> (commaSep1 $ choice [
+>                               XmlBinaryBase64 <$ (keyword "binary" *> keyword "base64")
+>                              ,XmlUseXmlType <$ keyword "type"
+>                              ,XmlRoot <$> (keyword "root" *> brackedString)
+>                              ,XmlData <$ keyword "xmldata"
+>                              ,XmlSchema <$> (keyword "xmlschema" *> brackedString)
+>                              ,XmlElements <$> (keyword "elements" *> optionMaybe (choice [
+>                                   XmlXsiNil <$ keyword "xsinil"
+>                                  ,XmlNullAbsent <$ keyword "absent"]))]))
+>             brackedString = option "" (parens $ extrStr <$> stringLit)
+
 
 table refs
 have to cope with:
@@ -340,6 +363,7 @@ then you combine by seeing if there is a join looking prefix
 >                                    <$> trefTerm
 >                                    <*> onExpr
 >                                    <*> palias
+>                                    <*> phints
 >                     >>= maybeParseAnotherJoin
 >                ,return tr1]
 >         trefTerm = nonJoinTref
@@ -355,7 +379,8 @@ then you combine by seeing if there is a join looking prefix
 >                          <*> palias
 >                         ,Tref p2
 >                          <$> nonKeywordName
->                          <*> palias]
+>                          <*> palias
+>                          <*> phints]
 >         joinKw :: SParser (Natural, JoinType)
 >         joinKw = do
 >              --look for the join flavour first
@@ -383,6 +408,37 @@ then you combine by seeing if there is a join looking prefix
 >                    (try $ optionalSuffix
 >                       (TableAlias p) (optional (keyword "as") *> nonKeywordNc)
 >                       (FullAlias p) () (parens $ commaSep1 nameComponent))
+>         phints = choice [
+>            keyword "with" *> parens (commaSep1 (
+>               choice [
+>                     NoExpand <$ keyword "noexpand"
+>                    ,Index <$> (keyword "index" *> parens (commaSep1 nameComponent))
+>                    ,ForceSeek <$> (keyword "forceseek" *> tryOptionMaybe (parens $
+>                           (,) <$> nameComponent
+>                               <*> option [] (parens $ commaSep1 nameComponent)))
+>                    ,ForceScan <$ keyword "forcescan"
+>                    ,HoldLock <$ keyword "holdlock"
+>                    ,NoLock <$ keyword "nolock"
+>                    ,NoWait <$ keyword "nowait"
+>                    ,PagLock <$ keyword "paglock"
+>                    ,ReadCommitted <$ keyword "readcommitted"
+>                    ,ReadCommittedLock <$ keyword "readcommittedlock"
+>                    ,ReadPast <$ keyword "readpast"
+>                    ,ReadUncommitted <$ keyword "readuncommitted"
+>                    ,RepeatableRead <$ keyword "repeatableread"
+>                    ,RowLock <$ keyword "rowlock"
+>                    ,Serializable <$ keyword "serializeable"
+>                    ,SpatialWindowMaxCells <$> (keyword "spatial_window_max_cells" *> integer)
+>                    ,TabLock <$ keyword "tablock"
+>                    ,TabLockX <$ keyword "tablockx"
+>                    ,UpdLock <$ keyword "updlock"
+>                    ,XLock <$ keyword "xlock"]))
+>           ,return []]
+>         pindexref = choice [
+>                  Just <$> (JoinOn <$> pos <*> (keyword "on" *> expr))
+>                 ,Just <$> (JoinUsing <$> pos
+>                            <*> (keyword "using" *> columnNameList))
+>                 ,return Nothing]
 >
 > optParens :: SParser a
 >           -> SParser a
@@ -1442,6 +1498,20 @@ checking with aggregates at the moment so should fix it all together.
 >   return $ case (di,ob) of
 >     (Nothing,[]) -> FunCall p (nm p fnName) as
 >     (d,o) -> AggregateFn p (fromMaybe Dupes d) (FunCall p (nm p fnName) as) o
+> functionCallSuffix (QIdentifier _ ncs) = do
+>   p <- pos
+>   (di,as,ob) <- parens
+>                 $ choice [ -- handle a single *
+>                           (Nothing,,[]) <$> ((:[]) <$> (Star <$> pos <* symbol "*"))
+>                          ,(,,)
+>                           <$> optionMaybe
+>                                (choice [Distinct <$ keyword "distinct"
+>                                        ,Dupes <$ keyword "all"])
+>                           <*> commaSep expr
+>                           <*> orderBy]
+>   return $ case (di,ob) of
+>     (Nothing,[]) -> FunCall p (Name p ncs) as
+>     (d,o) -> AggregateFn p (fromMaybe Dupes d) (FunCall p (Name p ncs) as) o
 > --hack for antiquoted function name
 > functionCallSuffix (AntiScalarExpr n) =
 >   functionCallSuffix (Identifier emptyAnnotation (Nmc $ "$(" ++ n ++ ")"))
@@ -1541,6 +1611,9 @@ identifier wasteland
 > qualIdSuffix (Identifier p i) = do
 >     i1 <- symbol "." *> nameComponent
 >     return $ QIdentifier p [i,i1]
+> qualIdSuffix (QIdentifier p i) = do
+>     i1 <- symbol "." *> nameComponent
+>     return $ QIdentifier p (i++[i1])
 > qualIdSuffix e = do
 >     p <- pos
 >     i1 <- symbol "." *> nameComponent
@@ -1560,12 +1633,11 @@ keywords which are unqualified.
 > nonKeywordNc :: SParser NameComponent
 > nonKeywordNc = do
 >   x <- nameComponent
->   if x `elem` badKeywords
->     then fail "not keyword (NameComponent)"
->     else return x
+>   case x of
+>     Nmc s | map toLower s `elem` badKeywords -> fail "not keyword (NameComponent)"
+>     _ -> return x
 >   where
->     badKeywords = map Nmc
->                   ["as"
+>     badKeywords = ["as"
 >                   ,"where"
 >                   ,"except"
 >                   ,"union"
@@ -1601,6 +1673,7 @@ keywords which are unqualified.
 > nameComponent :: SParser NameComponent
 > nameComponent = choice [Nmc <$> idString
 >                        ,QNmc <$> qidString
+>                        ,BNmc <$> bidString
 >                        ,Nmc <$> spliceD
 >                        ,Nmc <$> ssplice]
 >                 where
@@ -1652,6 +1725,16 @@ identifier which happens to start with a complete keyword
 >   where
 >     ids = mytoken (\tok -> case tok of
 >                                      QIdStringTok i -> Just i
+>                                      _ -> Nothing)
+> bidString :: SParser String
+> bidString =
+>     choice [(\l -> "$(" ++ l ++ ")")
+>             <$> (symbol "$(" *> idString <* symbol ")")
+>            ,ids
+>            ]
+>   where
+>     ids = mytoken (\tok -> case tok of
+>                                      BIdStringTok i -> Just i
 >                                      _ -> Nothing)
 
 

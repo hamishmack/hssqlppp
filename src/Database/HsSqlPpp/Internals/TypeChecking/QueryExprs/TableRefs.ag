@@ -274,7 +274,7 @@ SEM TableRef
     | SubTref
         loc.backTree = SubTref @ann @sel.annotatedTree @alias.annotatedTree
     | Tref
-        loc.backTree = Tref @ann @tbl.tbAnnotatedTree @alias.annotatedTree
+        loc.backTree = Tref @ann @tbl.tbAnnotatedTree @alias.annotatedTree @hints
     | FunTref
         loc.backTree = FunTref @ann @fn.annotatedTree @alias.annotatedTree
     | JoinTref
@@ -285,6 +285,7 @@ SEM TableRef
                                   @tbl1.annotatedTree
                                   @onExpr.annotatedTree
                                   @alias.annotatedTree
+                                  @hints
 
 
 ATTR TableAlias [expectedNumCols : {Maybe Int} ||]

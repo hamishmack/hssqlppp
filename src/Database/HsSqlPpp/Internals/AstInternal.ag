@@ -38,10 +38,15 @@ MODULE {Database.HsSqlPpp.Internals.AstInternal}
    ,SetClauseList
    ,TableRef (..)
    ,TableAlias(..)
+   ,TableHint(..)
    ,JoinExpr (..)
    ,JoinType (..)
    ,SelectList (..)
    ,SelectItem (..)
+   ,ForClause (..)
+   ,ForXmlType (..)
+   ,ForXmlDirective (..)
+   ,ForXmlNulls (..)
    ,CopySource (..)
    ,AttributeDef (..)
    ,RowConstraint (..)
@@ -334,6 +339,7 @@ DATA Statement
 
 data NameComponent = Nmc String
                    | QNmc String -- quoted
+                   | BNmc String -- bracketed
                      deriving (Data,Eq,Show,Typeable)
 -- this is a transition function
 -- it should be removed when ready, since all the code
@@ -341,6 +347,7 @@ data NameComponent = Nmc String
 ncStr :: NameComponent -> String
 ncStr (Nmc n) = n
 ncStr (QNmc n) = n
+ncStr (BNmc n) = n
 }
 
 DATA Name | Name ann:Annotation is:{[NameComponent]}
@@ -354,6 +361,7 @@ DATA QueryExpr
              selGroupBy : ScalarExprList
              selHaving : MaybeBoolExpr
              selOrderBy : ScalarExprDirectionPairList
+             selFor : {Maybe ForClause}
              selLimit : MaybeScalarExpr
              selOffset : MaybeScalarExpr
     | CombineQueryExpr ann:Annotation
@@ -378,6 +386,7 @@ DATA FnBody | SqlFnBody ann:Annotation sts : StatementList
 DATA TableRef | Tref ann:Annotation
                      tbl:Name
                      alias : TableAlias
+                     hints : {[TableHint]}
               | JoinTref ann:Annotation
                          tbl : TableRef
                          nat : Natural
@@ -385,6 +394,7 @@ DATA TableRef | Tref ann:Annotation
                          tbl1 : TableRef
                          onExpr : OnExpr
                          alias : TableAlias
+                         hints : {[TableHint]}
               | SubTref ann:Annotation
                         sel : QueryExpr
                         alias : TableAlias
@@ -395,6 +405,30 @@ DATA TableRef | Tref ann:Annotation
 DATA TableAlias | NoAlias ann:Annotation
                 | TableAlias ann:Annotation tb:NameComponent
                 | FullAlias ann:Annotation tb:NameComponent cols:{[NameComponent]}
+
+{
+data TableHint = NoExpand
+               | Index [NameComponent]
+               | ForceSeek (Maybe (NameComponent, [NameComponent]))
+               | ForceScan
+               | HoldLock
+               | NoLock
+               | NoWait
+               | PagLock
+               | ReadCommitted
+               | ReadCommittedLock
+               | ReadPast
+               | ReadUncommitted
+               | RepeatableRead
+               | RowLock
+               | Serializable
+               | SpatialWindowMaxCells Integer
+               | TabLock
+               | TabLockX
+               | UpdLock
+               | XLock
+                 deriving (Data,Eq,Show,Typeable)
+}
 
 DATA JoinExpr | JoinOn ann:Annotation expr:ScalarExpr
               | JoinUsing ann:Annotation x:{[NameComponent]}
@@ -544,6 +578,26 @@ data Replace = Replace | NoReplace
 data RestartIdentity = RestartIdentity | ContinueIdentity
                        deriving (Show,Eq,Typeable,Data)
 
+data ForXmlType = XmlRaw String
+                | XmlAuto
+                | XmlExplicit
+                | XmlPath String
+                  deriving (Show,Eq,Typeable,Data)
+
+data ForXmlNulls = XmlXsiNil | XmlNullAbsent
+                   deriving (Show,Eq,Typeable,Data)
+
+data ForXmlDirective = XmlBinaryBase64
+                     | XmlUseXmlType
+                     | XmlRoot String
+                     | XmlData
+                     | XmlSchema String
+                     | XmlElements (Maybe ForXmlNulls)
+                       deriving (Show,Eq,Typeable,Data)
+
+data ForClause = ForBrowse
+               | ForXml ForXmlType [ForXmlDirective]
+                 deriving (Show,Eq,Typeable,Data)
 }
 {-
 ================================================================================

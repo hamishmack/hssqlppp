@@ -462,7 +462,7 @@ Statement components
 >
 > queryExpr :: Bool -> Bool -> Bool -> Maybe (Bool,[Name]) -> QueryExpr -> Doc
 > queryExpr nice writeSelect _ intoi (Select _ dis l tb wh grp hav
->                                     order lim off) =
+>                                     order for lim off) =
 >   (text (if writeSelect then "select" else "")
 >          <+> (case dis of
 >                  Dupes -> empty
@@ -483,6 +483,7 @@ Statement components
 >      g -> Just $ text "group by" $+$ nest 2 (sepCsvMap (scalExpr nice) g)
 >   ,flip fmap hav $ \h -> text "having" $+$ nest 2 (scalExpr nice h)
 >   ,Just $ orderBy nice order
+>   ,flip fmap for $ forClause nice
 >   ,flip fmap lim $ \lm -> text "limit" <+> scalExpr nice lm
 >   ,flip fmap off $ \offs -> text "offset" <+> scalExpr nice offs
 >   ])
@@ -518,6 +519,7 @@ Statement components
 > nmc :: NameComponent -> Doc
 > nmc (Nmc ns) = text ns
 > nmc (QNmc ns) = doubleQuotes $ text ns
+> nmc (BNmc ns) = brackets $ text ns
 
 >
 > tref :: Bool -> TableRef -> Doc
@@ -527,8 +529,8 @@ Statement components
 > tref nice (Tref _ f@(SQIdentifier _ t) (FullAlias _ ta _))
 >   | nice, last t == ta = name f-}
 
-> tref nice (Tref _ f a) = name f <+> trefAlias nice a
-> tref nice (JoinTref _ t1 nat jt t2 ex a) =
+> tref nice (Tref _ f a h) = name f <+> trefAlias nice a <+> trefHints h
+> tref nice (JoinTref _ t1 nat jt t2 ex a h) =
 >         parens (tref nice t1
 >         $+$ (case nat of
 >                       Natural -> text "natural"
@@ -542,7 +544,8 @@ Statement components
 >         <+> text "join"
 >         <+> tref nice t2
 >         <+> maybePrint (nest 2 . joinScalarExpr) ex
->         <+> trefAlias nice a)
+>         <+> trefAlias nice a
+>         <+> trefHints h)
 >         where
 >           joinScalarExpr (JoinOn _ e) = text "on" <+> scalExpr nice e
 >           joinScalarExpr (JoinUsing _ ids) =
@@ -565,6 +568,34 @@ Statement components
 >   nmc t <> (if nice
 >              then empty
 >              else parens (sepCsvMap nmc s))
+
+> trefHints :: [TableHint] -> Doc
+> trefHints [] = empty
+> trefHints hints = text "with" <+> parens (sepCsvMap hint hints)
+
+> hint :: TableHint -> Doc
+> hint NoExpand                  = text "noexpand"
+> hint (Index indexes)           = text "index" <+> parens (sepCsvMap nmc indexes)
+> hint (ForceSeek Nothing)       = text "forceseek"
+> hint (ForceSeek (Just (i, c))) = text "forceseek" <+> parens (nmc i <+>
+>                                           ifNotEmpty (parens . sepCsvMap nmc) c)
+> hint ForceScan                 = text "forcescan"
+> hint HoldLock                  = text "holdlock"
+> hint NoLock                    = text "nolock"
+> hint NoWait                    = text "nowait"
+> hint PagLock                   = text "paglock"
+> hint ReadCommitted             = text "readcommitted"
+> hint ReadCommittedLock         = text "readcommittedlock"
+> hint ReadPast                  = text "readpast"
+> hint ReadUncommitted           = text "readuncommitted"
+> hint RepeatableRead            = text "repeatableread"
+> hint RowLock                   = text "rowlock"
+> hint Serializable              = text "serializable"
+> hint (SpatialWindowMaxCells n) = text "spatial_window_max_cells=" <+> integer n
+> hint TabLock                   = text "tablock"
+> hint TabLockX                  = text "tablockx"
+> hint UpdLock                   = text "updlock"
+> hint XLock                     = text "xlock"
 
 > direction :: Direction -> Doc
 > direction d = text $ case d of
@@ -904,6 +935,30 @@ Statement components
 >   text "order by"
 >   $+$ nest 2 (sepCsvMap (\(oe,od) -> scalExpr nice oe
 >                                      <+> direction od) os)
+
+> forClause :: Bool -> ForClause -> Doc
+> forClause nice ForBrowse = text "for browse"
+> forClause nice (ForXml t directives) =
+>     text "for xml"
+>     <+> case t of
+>         XmlRaw s    -> text $ "raw" ++ bracketString s
+>         XmlAuto     -> text "auto"
+>         XmlExplicit -> text "explicit"
+>         XmlPath s   -> text $ "path" ++ bracketString s
+>     <+> ifNotEmpty (\ds -> comma <+> sepCsvMap directive ds) directives
+>   where
+>     bracketString "" = ""
+>     bracketString s               = "('" ++ replace "'" "''" s ++ "')"
+>     directive XmlBinaryBase64     = text "binary base64"
+>     directive XmlUseXmlType       = text "type"
+>     directive (XmlRoot s)         = text $ "root" ++ bracketString s
+>     directive XmlData             = text "data"
+>     directive (XmlSchema s)       = text $ "schema" ++ bracketString s
+>     directive (XmlElements nulls) = text $ "elements"
+>                                       ++ case nulls of
+>                                               Nothing            -> ""
+>                                               Just XmlXsiNil     -> "xsinil"
+>                                               Just XmlNullAbsent -> "absent"
 
 > --vcatCsvMap :: (a -> Doc) -> [a] -> Doc
 > --vcatCsvMap ex = vcat . csv . map ex

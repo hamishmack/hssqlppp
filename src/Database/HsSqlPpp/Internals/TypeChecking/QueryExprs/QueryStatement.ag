@@ -162,6 +162,7 @@ SEM QueryExpr
                               @selGroupBy.annotatedTree
                               @selHaving.annotatedTree
                               @selOrderBy.annotatedTree
+                              @selFor
                               @selLimit.annotatedTree
                               @selOffset.annotatedTree
     | CombineQueryExpr

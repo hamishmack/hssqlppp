@@ -20,8 +20,13 @@
 >      -- ** Selects
 >     ,SelectList (..)
 >     ,SelectItem (..)
+>     ,ForClause (..)
+>     ,ForXmlType (..)
+>     ,ForXmlDirective (..)
+>     ,ForXmlNulls (..)
 >     ,TableRef (..)
 >     ,TableAlias(..)
+>     ,TableHint(..)
 >     ,JoinExpr (..)
 >     ,JoinType (..)
 >     ,Natural (..)
